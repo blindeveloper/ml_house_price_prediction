@@ -1,0 +1,107 @@
+from pathlib import Path
+import pandas as pd
+import tarfile
+import urllib.request
+import numpy as np
+from preprocessing_pipeline import PreprocessingPipeline
+from train_and_evaluate import TrainAndEvaluate
+from fine_tune_model import FineTuneModel
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import FunctionTransformer
+from sklearn.metrics.pairwise import rbf_kernel
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import RandomForestRegressor
+
+
+def load_housing_data():
+    tarball_path = Path("datasets/housing.tgz")
+    if not tarball_path.is_file():
+        Path("datasets").mkdir(parents=True, exist_ok=True)
+        url = "https://github.com/ageron/data/raw/main/housing.tgz"
+        urllib.request.urlretrieve(url, tarball_path)
+        with tarfile.open(tarball_path) as housing_tarball:
+            housing_tarball.extractall(path="datasets")
+    return pd.read_csv(Path("datasets/housing/housing.csv"))
+
+def get_test_train_sets(housing):
+    #################################################################################################################################
+    # median income is important for calculating median housing price
+    # you should not have too many strata, and each stratum should be large enough.
+    # create an income category attribute with five categories
+    housing["income_cat"] = pd.cut(housing["median_income"],
+                                bins=[0., 1.5, 3.0, 4.5, 6., np.inf],
+                                labels=[1, 2, 3, 4, 5])
+
+    housing["income_cat"].value_counts().sort_index().plot.bar(rot=0, grid=True)
+    # random sampling (we not gonna use in in the end)
+    # train_set, test_set = train_test_split(housing, test_size=0.2, random_state=42)
+
+    # Stratified sampling based on the income category
+    strat_train_set, strat_test_set = train_test_split(
+        housing, test_size=0.2, stratify=housing["income_cat"], random_state=42)
+
+    # important to use stat data sets, not rundom
+    # init_val = housing["income_cat"].value_counts() / len(housing)
+    # non_start_val = test_set["income_cat"].value_counts() / len(test_set)
+    # start_val = strat_test_set["income_cat"].value_counts() / len(strat_test_set)
+
+    # print('======>start_val val:', start_val)
+    # print('======>non_start_val val:', non_start_val)
+    # print('======>init_val val:', init_val)
+    # strat split is much closer to original data ratio
+
+    # We won’t use the income_cat column again, so we can as well drop it, reverting the data back to its original state:
+    for set_ in (strat_train_set, strat_test_set):
+        set_.drop("income_cat", axis=1, inplace=True)
+
+    return strat_train_set, strat_test_set
+
+def add_useful_attributes(housing):
+    housing["rooms_per_house"] = housing["total_rooms"] / housing["households"]
+    housing["bedrooms_ratio"] = housing["total_bedrooms"] / housing["total_rooms"]
+    housing["people_per_house"] = housing["population"] / housing["households"]
+    return housing
+
+def revert_to_clean_training_set(housing):
+    housing = strat_train_set.drop("median_house_value", axis=1)
+    housing_labels = strat_train_set["median_house_value"].copy()
+    return housing, housing_labels
+    # measure the geographic similarity between each district and San Francisco:
+
+def measure_geo_similarity(housing):
+    sf_coords = 37.7749, -122.41
+    sf_transformer = FunctionTransformer(rbf_kernel, kw_args=dict(Y=[sf_coords], gamma=0.1))
+    simil = sf_transformer.transform(housing[["latitude", "longitude"]])
+    print('======>simil:', simil)
+
+# 1. load data
+init_housing = load_housing_data()
+# 2. getting training and test sets
+strat_train_set, strat_test_set = get_test_train_sets(init_housing)
+# we explore only strat_train_set
+# from now our housing is a copy of strat_train_set
+housing = strat_train_set.copy()
+
+# 3. getting prepared/preprocessed housing data
+housing = add_useful_attributes(housing)
+housing, housing_labels = revert_to_clean_training_set(housing)
+preprocessing_pipeline = PreprocessingPipeline(housing)
+preprocessing = preprocessing_pipeline.get_preprocessing()
+housing_prepared = preprocessing.fit_transform(housing)
+
+# 4. training and finding best performing models
+train_and_evaluate = TrainAndEvaluate(housing, preprocessing, housing_labels)
+
+lin_regression_model = train_and_evaluate.train_linear_regression()
+train_and_evaluate.get_model_rmses(lin_regression_model)
+
+# decision_tree_model = train_and_evaluate.train_decision_tree()
+# train_and_evaluate.get_model_rmses(decision_tree_model)
+
+# random_forest_model = train_and_evaluate.train_random_forest()
+# train_and_evaluate.get_model_rmses(random_forest_model) #best performing model
+
+# 5. Fine-Tune Your Model
+fine_tune_model = FineTuneModel(housing, preprocessing, housing_labels)
+best_params = fine_tune_model.get_model_best_params(RandomForestRegressor) # {'_clusters': 15, '_features': 6}
+print('======>best_params:', best_params)
