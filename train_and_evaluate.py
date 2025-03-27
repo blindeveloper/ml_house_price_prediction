@@ -73,5 +73,8 @@ class TrainAndEvaluate:
         return forest_reg
 
     def get_model_rmses(self, model):
+        # Scikit-learn’s cross_val_score returns negative RMSE values when using neg_root_mean_squared_error as the scoring metric.
+        # The reason: Scikit-learn’s convention is that higher scores are better, but RMSE is an error metric (lower is better). 
+        # So, it negates RMSE to make it consistent with other scoring metrics.
         rmses = -cross_val_score(model, self.housing, self.housing_labels, scoring="neg_root_mean_squared_error", cv=10) 
         print('======>', pd.Series(rmses).describe())

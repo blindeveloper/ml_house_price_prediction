@@ -7,77 +7,14 @@ from sklearn.compose import ColumnTransformer
 from sklearn.compose import make_column_selector
 import numpy as np
 from sklearn.pipeline import make_pipeline
-from sklearn.compose import make_column_selector
+import pandas as pd
 
+# This class automates feature engineering by applying ratios, log transformations, clustering, and scaling.
+# 	Why is this useful?
+# 	Ratios like bedrooms per room provide useful insights.
+# 	Log transformations reduce skewness in numerical distributions.
+# 	ClusterSimilarity helps incorporate location-based patterns.
 
-# def apply_replace_missing_values(housing):
-#     imputer = SimpleImputer(strategy="median")
-#     # imputer can work only with numbers
-#     # print('======>housing.head():', housing.head())
-#     # housing_num = housing.select_dtypes(include=[np.number])
-#     imputer.fit(housing)
-#     # imputer computed the median of EACH attribute and stored the result in its statistics_ instance variable.
-#     # print('======>imputer.statistics_:', imputer.statistics_)
-#     X = imputer.transform(housing)
-#     return pd.DataFrame(X, columns=housing.columns,
-#                           index=housing.index)
-
-# def apply_replace_text_cat_with_numerical(housing, category):
-#     cat_encoder = OneHotEncoder()
-#     # convert the categorical attribute ocean_proximity to numerical values
-#     housing_cat = housing[[category]]
-#     cat_encoder.fit_transform(housing_cat)
-#     housing_cat_1hot = cat_encoder.transform(housing_cat).toarray()
-#     housing_cat_df = pd.DataFrame(housing_cat_1hot, 
-#                                   columns=[f"{category}_{cat}" for cat in cat_encoder.categories_[0]],
-#                                   index=housing.index)
-#     housing = pd.concat([housing, housing_cat_df], axis=1)
-#     housing.drop('ocean_proximity', axis=1, inplace=True)
-#     return housing
-
-# def apply_scale_min_max(housing):
-#     min_max_scaler = MinMaxScaler(feature_range=(-1, 1))
-#     # Select columns that do NOT contain 'ocean_proximity' in their names
-#     columns_to_scale = [col for col in housing.columns if 'ocean_proximity' not in col]
-#     # Apply MinMaxScaler only to selected columns
-#     housing[columns_to_scale] = min_max_scaler.fit_transform(housing[columns_to_scale])
-#     return housing
-
-# def apply_scale_standartization(housing):
-#     std_scaler = StandardScaler()
-#     columns_to_scale = [col for col in housing.columns if 'ocean_proximity' not in col]
-#     housing[columns_to_scale] = std_scaler.fit_transform(housing[columns_to_scale])
-#     return housing
-
-# def transformed_target_regressor(housing, new_data):
-#     model = TransformedTargetRegressor(LinearRegression(), transformer=StandardScaler())
-#     model.fit(housing[["median_income"]], housing_labels)
-#     predictions = model.predict(new_data)
-#     return predictions
-
-# def apply_transform_log(housing, category):
-#     transform_log = FunctionTransformer(np.log, inverse_func=np.exp)
-#     housing[category] = transform_log.transform(housing[[category]])
-#     return housing
-
-# def apply_transform_gaussian_rbf_similarity_measure(housing, category):
-#     rbf_transformer = FunctionTransformer(rbf_kernel, kw_args=dict(Y=[[35.]], gamma=0.1))
-#     housing[category] = rbf_transformer.transform(housing[["housing_median_age"]])
-#     return housing
-
-
-
-# housing_num_no_nun_min_max_scaled = (housing
-#            .pipe(apply_replace_text_cat_with_numerical, 'ocean_proximity')
-#            .pipe(apply_replace_missing_values)
-#            .pipe(apply_transform_log, 'population')
-#         #    .pipe(apply_transform_gaussian_rbf_similarity_measure, 'population')
-#            .pipe(apply_scale_min_max)
-#         #    .pipe(apply_scale_standartization)
-#            )
-
-# target_scaler = StandardScaler()
-# scaled_labels = target_scaler.fit_transform(housing_labels.to_frame())
 
 # This code creates a ClusterSimilarity transformer, setting the number of clusters to 10. 
 # Then it calls fit_transform() with the latitude and longitude of every district in the training set, 
@@ -104,36 +41,69 @@ class PreprocessingPipeline:
     def __init__(self, housing):
         self.housing = housing
 
+    #This function calculates the ratio of two numerical columns.
+    #X is expected to be a 2D NumPy array where the first column (X[:, [0]]) is divided by the second (X[:, [1]]).
+    # Example:
+    # If X = [[10, 2], [30, 6]], the output will be: [[5], [5]]
+    # This transformation is useful for creating derived features like bedroom-to-room ratio.
     def column_ratio(self, X):
         return X[:, [0]] / X[:, [1]]
 
+    # This method ensures that the transformed feature is named "ratio" in the final dataset.
     def ratio_name(self, function_transformer, feature_names_in):
         return ["ratio"]  # feature names out
 
     def ratio_pipeline(self):
         return make_pipeline(
+            # Fills missing values with the median.
             SimpleImputer(strategy="median"),
+            # Computes the column ratio.
             FunctionTransformer(self.column_ratio, feature_names_out=self.ratio_name),
+            # Standardizes the ratio by scaling it to have mean 0 and variance 1.
             StandardScaler())
+    
+    def get_X_transformed(self, preprocessor):
+        feature_names = preprocessor.get_feature_names_out()
+        # Convert transformed NumPy array to DataFrame
+        X_transformed = preprocessor.fit_transform(self.housing)
+        X_transformed_df = pd.DataFrame(X_transformed, columns=feature_names)
+        return X_transformed, X_transformed_df
 
-    def get_preprocessing(self):
+    def get_preprocessor(self):
+        # Uses ClusterSimilarity to generate cluster-based features from latitude and longitude.
         cluster_simil = ClusterSimilarity(n_clusters=10, gamma=1., random_state=42)
 
-        num_pipeline = make_pipeline(SimpleImputer(strategy="median"), StandardScaler())
-        cat_pipeline = make_pipeline(SimpleImputer(strategy="most_frequent"), OneHotEncoder(handle_unknown="ignore"))
+        # Handles numerical columns by imputing missing values and scaling them.
+        num_pipeline = make_pipeline(
+            SimpleImputer(strategy="median"), 
+            StandardScaler()
+        )
+
+        # Handles categorical columns by imputing missing values and applying one-hot encoding.
+        cat_pipeline = make_pipeline(
+            SimpleImputer(strategy="most_frequent"), 
+            OneHotEncoder(handle_unknown="ignore")
+        )
+
+        # Applies a log transformation to certain numerical columns, then scales them.
         log_pipeline = make_pipeline(
             SimpleImputer(strategy="median"), 
             FunctionTransformer(np.log, feature_names_out="one-to-one"), 
             StandardScaler()
         )
 
+        # Uses ColumnTransformer to apply different pipelines to different feature sets
         return ColumnTransformer([
                 ("bedrooms", self.ratio_pipeline(), ["total_bedrooms", "total_rooms"]),
                 ("rooms_per_house", self.ratio_pipeline(), ["total_rooms", "households"]),
                 ("people_per_house", self.ratio_pipeline(), ["population", "households"]),
-                ("log", log_pipeline, ["total_bedrooms", "total_rooms", "population",
-                                    "households", "median_income"]),
+
+                # Log Transformation: Applied to ["total_bedrooms", "total_rooms", "population", "households", "median_income"]
+                ("log", log_pipeline, ["total_bedrooms", "total_rooms", "population", "households", "median_income"]),
+
+                # Geographical Clustering: Uses latitude and longitude to assign cluster similarity.
                 ("geo", cluster_simil, ["latitude", "longitude"]),
+                
+                # Categorical Encoding: Encodes categorical features using one-hot encoding.
                 ("cat", cat_pipeline, make_column_selector(dtype_include=object)),
-            ],
-            remainder=num_pipeline)  # one column remaining: housing_median_age
+        ], remainder=num_pipeline)  # one column remaining: housing_median_age

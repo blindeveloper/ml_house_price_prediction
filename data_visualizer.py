@@ -3,22 +3,21 @@ from pandas.plotting import scatter_matrix
 import numpy as np
 
 class DataVisualizer:
-    def __init__(self, housing):
-        self.housing = housing
+    def __init__(self, data):
+        self.data = data
 
     def show_data_info(self):
-        print('======>self.housing.info():', self.housing.info())
-        print('======>self.housing.head():', self.housing.head())
-        # print('======>self.housing["ocean_proximity"].value_counts():', self.housing["ocean_proximity"].value_counts())
-        print('======>self.housing.describe():', self.housing.describe())
+        print('======>self.data.info():', self.data.info())
+        print('======>self.data.head():', self.data.head())
+        print('======>self.data.describe():', self.data.describe())
 
     def show_geographical_data(self):
         # Because the dataset includes geographical information (latitude and longitude), 
         # it is a good idea to create a scatterplot of all the districts to visualize the data 
-        self.housing.plot(kind="scatter", x="longitude", y="latitude", grid=True, alpha=0.1)
+        self.data.plot(kind="scatter", x="longitude", y="latitude", grid=True, alpha=0.1)
 
         # The radius of each circle represents the district’s population (option s), and the color represents the price
-        self.housing.plot(kind="scatter", x="longitude", y="latitude", grid=True,
+        self.data.plot(kind="scatter", x="longitude", y="latitude", grid=True,
                     s=self.housing["population"] / 100, label="population",
                     c="median_house_value", cmap="jet", colorbar=True,
                     legend=True, sharex=False, figsize=(10, 7))
@@ -33,7 +32,7 @@ class DataVisualizer:
     def show_corelation_matrix(self, attr):
         # BECAUSE OF ERROR "could not convert string to float: 'NEAR BAY'", WE NEED TO CONVERT THE CATEGORICAL ATTRIBUTE ocean_proximity TO NUMERICAL VALUES"
         # Since the dataset is not too large, you can easily compute the standard correlation coefficient
-        housing_num = self.housing.select_dtypes(include=[np.number])
+        housing_num = self.data.select_dtypes(include=[np.number])
         corr_matrix = housing_num.corr()
         print('==================================>corr_matrix:', corr_matrix)
         # cor = corr_matrix[attr].sort_values(ascending=False)
@@ -46,6 +45,6 @@ class DataVisualizer:
         plt.show()
 
     def show_median_income_corelation(self): 
-        self.housing.plot(kind="scatter", x="median_income", y="median_house_value",
+        self.data.plot(kind="scatter", x="median_income", y="median_house_value",
                 alpha=0.1, grid=True)
         plt.show()

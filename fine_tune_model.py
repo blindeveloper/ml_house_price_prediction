@@ -21,5 +21,4 @@ class FineTuneModel:
 
         grid_search = GridSearchCV(full_pipeline, param_grid, cv=3, scoring='neg_root_mean_squared_error')
         grid_search.fit(self.housing, self.housing_labels)
-        best_params = grid_search.best_params_
-        return best_params
+        return grid_search.best_params_, grid_search.cv_results_

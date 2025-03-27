@@ -10,7 +10,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import FunctionTransformer
 from sklearn.metrics.pairwise import rbf_kernel
 from sklearn.tree import DecisionTreeRegressor
-from sklearn.ensemble import RandomForestRegressor
+# from sklearn.ensemble import RandomForestRegressor
 
 
 def load_housing_data():
@@ -64,10 +64,10 @@ def add_useful_attributes(housing):
 
 def revert_to_clean_training_set(housing):
     housing = strat_train_set.drop("median_house_value", axis=1)
-    housing_labels = strat_train_set["median_house_value"].copy()
-    return housing, housing_labels
-    # measure the geographic similarity between each district and San Francisco:
+    label_median_house_value = strat_train_set["median_house_value"].copy()
+    return housing, label_median_house_value
 
+# measure the geographic similarity between each district and San Francisco:
 def measure_geo_similarity(housing):
     sf_coords = 37.7749, -122.41
     sf_transformer = FunctionTransformer(rbf_kernel, kw_args=dict(Y=[sf_coords], gamma=0.1))
@@ -84,24 +84,33 @@ housing = strat_train_set.copy()
 
 # 3. getting prepared/preprocessed housing data
 housing = add_useful_attributes(housing)
-housing, housing_labels = revert_to_clean_training_set(housing)
+housing, label_median_house_value = revert_to_clean_training_set(housing)
 preprocessing_pipeline = PreprocessingPipeline(housing)
-preprocessing = preprocessing_pipeline.get_preprocessing()
-housing_prepared = preprocessing.fit_transform(housing)
+preprocessor = preprocessing_pipeline.get_preprocessor()
 
 # 4. training and finding best performing models
-train_and_evaluate = TrainAndEvaluate(housing, preprocessing, housing_labels)
+train_and_evaluate = TrainAndEvaluate(housing, preprocessor, label_median_house_value)
 
-lin_regression_model = train_and_evaluate.train_linear_regression()
-train_and_evaluate.get_model_rmses(lin_regression_model)
+# print('linear regression model')
+# lin_regression_model = train_and_evaluate.train_linear_regression()
+# train_and_evaluate.get_model_rmses(lin_regression_model)
 
-# decision_tree_model = train_and_evaluate.train_decision_tree()
-# train_and_evaluate.get_model_rmses(decision_tree_model)
+print('decision tree model')
+decision_tree_model = train_and_evaluate.train_decision_tree()
+train_and_evaluate.get_model_rmses(decision_tree_model)
 
+#SLOW but best performing model
+# print('random forest model')
 # random_forest_model = train_and_evaluate.train_random_forest()
-# train_and_evaluate.get_model_rmses(random_forest_model) #best performing model
+# train_and_evaluate.get_model_rmses(random_forest_model)
 
-# 5. Fine-Tune Your Model
-fine_tune_model = FineTuneModel(housing, preprocessing, housing_labels)
-best_params = fine_tune_model.get_model_best_params(RandomForestRegressor) # {'_clusters': 15, '_features': 6}
-print('======>best_params:', best_params)
+# 5. Fine-Tune Model
+fine_tune_model = FineTuneModel(housing, preprocessor, label_median_house_value)
+best_params_, cv_results_ = fine_tune_model.get_model_best_params(DecisionTreeRegressor) # {'_clusters': 15, '_features': 6}
+print('======>best_params:', best_params_)
+
+# cv_res = pd.DataFrame(cv_results_)
+# cv_res.sort_values(by="mean_test_score", ascending=False, inplace=True)
+# # change column names to fit on this page, and show rmse = -score
+# # cv_res.head()  # note: the 1st column is the row ID
+# print('======>cv_res.head():', cv_res.head())
