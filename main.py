@@ -9,8 +9,9 @@ from fine_tune_model import FineTuneModel
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import FunctionTransformer
 from sklearn.metrics.pairwise import rbf_kernel
-from sklearn.tree import DecisionTreeRegressor
-# from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import root_mean_squared_error
+from sklearn.ensemble import RandomForestRegressor
+import pprint
 
 
 def load_housing_data():
@@ -95,22 +96,37 @@ train_and_evaluate = TrainAndEvaluate(housing, preprocessor, label_median_house_
 # lin_regression_model = train_and_evaluate.train_linear_regression()
 # train_and_evaluate.get_model_rmses(lin_regression_model)
 
-print('decision tree model')
-decision_tree_model = train_and_evaluate.train_decision_tree()
-train_and_evaluate.get_model_rmses(decision_tree_model)
+# print('decision tree model')
+# decision_tree_model = train_and_evaluate.train_decision_tree()
+# train_and_evaluate.get_model_rmses(decision_tree_model)
 
 #SLOW but best performing model
-# print('random forest model')
-# random_forest_model = train_and_evaluate.train_random_forest()
-# train_and_evaluate.get_model_rmses(random_forest_model)
+print('random forest model')
+random_forest_model = train_and_evaluate.train_random_forest()
+train_and_evaluate.get_model_rmses(random_forest_model)
+
+#Fast hgb model
+# print('hgb model')
+# hgb_model = train_and_evaluate.train_hgb()
+# train_and_evaluate.get_model_rmses(hgb_model)
 
 # 5. Fine-Tune Model
 fine_tune_model = FineTuneModel(housing, preprocessor, label_median_house_value)
-best_params_, cv_results_ = fine_tune_model.get_model_best_params(DecisionTreeRegressor) # {'_clusters': 15, '_features': 6}
-print('======>best_params:', best_params_)
+print('tuning started')
+rnd_best_params_, rnd_cv_results_, rnd_cv_results_df, final_model = fine_tune_model.find_best_hyper_params(
+    RandomForestRegressor, search_method='random'
+)
+feature_importances = final_model['random_forest'].feature_importances_
+# Sorting importance scores in descending order and display them next to their corresponding attribute names:
+res = sorted(zip(feature_importances, final_model["preprocessing"].get_feature_names_out()), reverse=True)
+pprint.pprint(res)
 
-# cv_res = pd.DataFrame(cv_results_)
-# cv_res.sort_values(by="mean_test_score", ascending=False, inplace=True)
-# # change column names to fit on this page, and show rmse = -score
-# # cv_res.head()  # note: the 1st column is the row ID
-# print('======>cv_res.head():', cv_res.head())
+
+# Evaluate Your System on the Test Set
+X_test = strat_test_set.drop("median_house_value", axis=1)
+y_test = strat_test_set["median_house_value"].copy()
+final_predictions = final_model.predict(X_test)
+
+final_rmse = root_mean_squared_error(y_test, final_predictions)
+print('======================================================================================')
+print(final_rmse)  # prints 41424.40026462184

@@ -4,6 +4,7 @@ from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import cross_val_score
 import pandas as pd
+from sklearn.ensemble import HistGradientBoostingRegressor
 
 
 
@@ -64,11 +65,18 @@ class TrainAndEvaluate:
         tree_reg = make_pipeline(self.preprocessing, DecisionTreeRegressor(random_state=42))
         tree_reg.fit(self.housing, self.housing_labels)
         return tree_reg
+    
+    # DecisionTreeRegressor model
+    def train_hgb(self):
+        hgb_reg = make_pipeline(self.preprocessing, HistGradientBoostingRegressor(random_state=42))
+        hgb_reg.fit(self.housing, self.housing_labels)
+        return hgb_reg
 
     # RandomForestRegressor model
     # ===========Providev best results but it takes a lot of time to calculate================
     def train_random_forest(self):
-        forest_reg = make_pipeline(self.preprocessing, RandomForestRegressor(random_state=42))
+        # Set n_jobs=-1 to use all available CPU cores.
+        forest_reg = make_pipeline(self.preprocessing, RandomForestRegressor(random_state=42, n_jobs=-1))
         forest_reg.fit(self.housing, self.housing_labels)
         return forest_reg
 
