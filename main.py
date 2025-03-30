@@ -6,13 +6,12 @@ import numpy as np
 from preprocessing_pipeline import PreprocessingPipeline
 from train_and_evaluate import TrainAndEvaluate
 from fine_tune_model import FineTuneModel
+from evaluate_model import EvaluateModel
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import FunctionTransformer
 from sklearn.metrics.pairwise import rbf_kernel
-from sklearn.metrics import root_mean_squared_error
 from sklearn.ensemble import RandomForestRegressor
 import pprint
-
 
 def load_housing_data():
     tarball_path = Path("datasets/housing.tgz")
@@ -111,8 +110,8 @@ train_and_evaluate.get_model_rmses(random_forest_model)
 # train_and_evaluate.get_model_rmses(hgb_model)
 
 # 5. Fine-Tune Model
-fine_tune_model = FineTuneModel(housing, preprocessor, label_median_house_value)
 print('tuning started')
+fine_tune_model = FineTuneModel(housing, preprocessor, label_median_house_value)
 rnd_best_params_, rnd_cv_results_, rnd_cv_results_df, final_model = fine_tune_model.find_best_hyper_params(
     RandomForestRegressor, search_method='random'
 )
@@ -121,12 +120,8 @@ feature_importances = final_model['random_forest'].feature_importances_
 res = sorted(zip(feature_importances, final_model["preprocessing"].get_feature_names_out()), reverse=True)
 pprint.pprint(res)
 
-
 # Evaluate Your System on the Test Set
-X_test = strat_test_set.drop("median_house_value", axis=1)
-y_test = strat_test_set["median_house_value"].copy()
-final_predictions = final_model.predict(X_test)
-
-final_rmse = root_mean_squared_error(y_test, final_predictions)
-print('======================================================================================')
-print(final_rmse)  # prints 41424.40026462184
+evaluate_model = EvaluateModel(strat_test_set, final_model)
+final_rmse, comparison = evaluate_model.get_final_results()
+print('======>final_rmse:', final_rmse) #41448.084299370465
+print('======>comparison:', comparison) #[39293.29060201 43496.26073402]
