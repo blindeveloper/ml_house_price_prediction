@@ -175,3 +175,5 @@ cython_debug/
 
 datasets/*
 .DS_Store
+*.csv
+*.pkl
