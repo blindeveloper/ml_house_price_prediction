@@ -180,4 +180,4 @@ datasets/*
 *.tfstate 
 *.tfstate.backup
 infra/.terraform/
-bundles/
+infra/bundles

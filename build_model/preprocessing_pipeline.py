@@ -2,9 +2,9 @@
 from sklearn.pipeline import make_pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import OneHotEncoder, StandardScaler, FunctionTransformer
-from claster_similarity import ClusterSimilarity
 from sklearn.compose import ColumnTransformer
 from sklearn.compose import make_column_selector
+from build_model.claster_similarity import ClusterSimilarity
 import numpy as np
 from sklearn.pipeline import make_pipeline
 import pandas as pd

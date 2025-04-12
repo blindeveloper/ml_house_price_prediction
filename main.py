@@ -3,16 +3,16 @@ import pandas as pd
 import tarfile
 import urllib.request
 import numpy as np
-from preprocessing_pipeline import PreprocessingPipeline
-from train_and_evaluate import TrainAndEvaluate
-from fine_tune_model import FineTuneModel
-from evaluate_model import EvaluateModel
+from build_model.preprocessing_pipeline import PreprocessingPipeline
+from build_model.train_and_evaluate import TrainAndEvaluate
+from build_model.fine_tune_model import FineTuneModel
+from build_model.evaluate_model import EvaluateModel
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import FunctionTransformer
 from sklearn.metrics.pairwise import rbf_kernel
 from sklearn.ensemble import RandomForestRegressor
 import pprint
-# import joblib
+# # import joblib
 import pickle
 import time
 
@@ -139,10 +139,11 @@ def generate_model():
     with open(f"infra/bundles/{model_filename}", "wb") as f:
         pickle.dump(final_model, f)
     print(f"Model saved as {model_filename}")
-generate_model()
+
+# generate_model()
 
 def use_model():
-    with open("infra/bundles/model_v3.pkl", "rb") as f:
+    with open("infra/bundles/model_1744486655460.pkl", "rb") as f:
         model = pickle.load(f)
     test_set = pd.read_csv("strat_test_set.csv")
     label_median_house_value = test_set['median_house_value'].copy()
@@ -154,6 +155,6 @@ def use_model():
         real_price = label_median_house_value.iloc[index]
         print(f"Row {index}: Predicted Price = {predicted_price[0]}, Real Price = {real_price}")
         
-# use_model()
+use_model()
 
     
