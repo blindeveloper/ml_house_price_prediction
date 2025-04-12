@@ -12,7 +12,9 @@ from sklearn.preprocessing import FunctionTransformer
 from sklearn.metrics.pairwise import rbf_kernel
 from sklearn.ensemble import RandomForestRegressor
 import pprint
-import joblib
+# import joblib
+import pickle
+import time
 
 
 def generate_model():
@@ -130,12 +132,18 @@ def generate_model():
     print('======>final_rmse:', final_rmse) #41448.084299370465
     print('======>comparison:', comparison) #[39293.29060201 43496.26073402]
 
-    # Saving model, using joblib library
-    joblib.dump(final_model, "random_forest_housing_model.pkl")
-# generate_model()
+    # Saving model, using pickle library
+    current_time_ms = int(time.time() * 1000)
+    Path("infra/bundles").mkdir(parents=True, exist_ok=True)
+    model_filename = f"model_{current_time_ms}.pkl"
+    with open(f"infra/bundles/{model_filename}", "wb") as f:
+        pickle.dump(final_model, f)
+    print(f"Model saved as {model_filename}")
+generate_model()
 
 def use_model():
-    model = joblib.load("random_forest_housing_model.pkl")
+    with open("infra/bundles/model_v3.pkl", "rb") as f:
+        model = pickle.load(f)
     test_set = pd.read_csv("strat_test_set.csv")
     label_median_house_value = test_set['median_house_value'].copy()
     housing = test_set.drop("median_house_value", axis=1)

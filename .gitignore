@@ -177,3 +177,7 @@ datasets/*
 .DS_Store
 *.csv
 *.pkl
+*.tfstate 
+*.tfstate.backup
+infra/.terraform/
+bundles/
