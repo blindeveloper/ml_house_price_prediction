@@ -66,7 +66,8 @@ resource "aws_lambda_function" "house_price_prediction_lambda" {
     }
   }
   layers = [
-    aws_lambda_layer_version.scikit_learn_layer.arn
+    aws_lambda_layer_version.scikit_learn_layer.arn,
+    aws_lambda_layer_version.build_model_layer.arn
   ]
 }
 
@@ -105,12 +106,20 @@ output "api_gateway_url" {
   value = aws_apigatewayv2_api.http_api.api_endpoint
 }
 
-# Upload the Layer Package to S3
+# Upload the scikit_learn_layer Package to S3
 resource "aws_s3_object" "scikit_learn_layer" {
   bucket = aws_s3_bucket.model_bucket.id
-  key    = "scikit_learn_layer_17444678653N.zip"
-  source = "./bundles/scikit_learn_layer_17444678653N.zip" # Path to your local zip file
-  etag   = filemd5("./bundles/scikit_learn_layer_17444678653N.zip")
+  key    = "scikit_learn_layer_17444942593N.zip"
+  source = "./bundles/scikit_learn_layer_17444942593N.zip" # Path to your local zip file
+  etag   = filemd5("./bundles/scikit_learn_layer_17444942593N.zip")
+}
+
+# Upload the build_model_layer Package to S3
+resource "aws_s3_object" "build_model_layer" {
+  bucket = aws_s3_bucket.model_bucket.id
+  key    = "build_model_layer_17444928713N.zip"
+  source = "./bundles/build_model_layer_17444928713N.zip" # Path to your local zip file
+  etag   = filemd5("./bundles/build_model_layer_17444928713N.zip")
 }
 
 #  Create the Lambda Layer with Terraform
@@ -120,6 +129,15 @@ resource "aws_lambda_layer_version" "scikit_learn_layer" {
   compatible_runtimes = ["python3.8"] # Specify the runtimes
   s3_bucket           = aws_s3_bucket.model_bucket.id
   s3_key              = aws_s3_object.scikit_learn_layer.key
+}
+
+#  Create the build_model_layer Layer with Terraform
+resource "aws_lambda_layer_version" "build_model_layer" {
+  layer_name          = "build-model-layer"
+  description         = "Lambda layer with build model codebase"
+  compatible_runtimes = ["python3.8"] # Specify the runtimes
+  s3_bucket           = aws_s3_bucket.model_bucket.id
+  s3_key              = aws_s3_object.build_model_layer.key
 }
 
 resource "aws_iam_role" "lambda_exec" {

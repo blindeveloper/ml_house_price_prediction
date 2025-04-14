@@ -8,7 +8,14 @@ file_name="scikit_learn_layer_${current_time_ms}.zip"
 
 # Use a Docker container with the lambci/lambda image to install Python dependencies
 docker run --rm -v $(pwd):/foo -w /foo lambci/lambda:build-python3.8 \
-    pip install -r scikit_learn_requirements.txt --no-deps -t ${PKG_DIR}
+    pip install -r scikit_learn_requirements.txt --no-deps --no-cache-dir -t ${PKG_DIR}
+
+# Remove unnecessary files to reduce the zip size
+find ${PKG_DIR} -name "*.dist-info" -type d -exec rm -rf {} +
+find ${PKG_DIR} -name "*.egg-info" -type d -exec rm -rf {} +
+find ${PKG_DIR} -name "__pycache__" -type d -exec rm -rf {} +
+find ${PKG_DIR} -name "tests" -type d -exec rm -rf {} +
+find ${PKG_DIR} -name "docs" -type d -exec rm -rf {} +
 
 # Create a zip file containing the installed Python packages
 zip -r9 ${file_name} ./python/
