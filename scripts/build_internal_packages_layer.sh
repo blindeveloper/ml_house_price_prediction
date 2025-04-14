@@ -2,7 +2,7 @@
 #!/bin/bash
 # Get the current timestamp in milliseconds to create a unique filename
 current_time_ms=$(date +%s%3N)
-file_name="build_model_layer_${current_time_ms}.zip"
+file_name="internal_packages_layer_${current_time_ms}.zip"
 
 mkdir -p layer/python
 cp -r ../build_model layer/python/

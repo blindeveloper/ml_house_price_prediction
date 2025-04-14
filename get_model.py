@@ -16,17 +16,17 @@ import pprint
 import pickle
 import time
 
-
 def generate_model():
     def load_housing_data():
-        tarball_path = Path("datasets/housing.tgz")
+        tarball_path = Path("../datasets/housing.tgz")
+
         if not tarball_path.is_file():
-            Path("datasets").mkdir(parents=True, exist_ok=True)
+            Path("../datasets").mkdir(parents=True, exist_ok=True)
             url = "https://github.com/ageron/data/raw/main/housing.tgz"
             urllib.request.urlretrieve(url, tarball_path)
             with tarfile.open(tarball_path) as housing_tarball:
                 housing_tarball.extractall(path="datasets")
-        return pd.read_csv(Path("datasets/housing/housing.csv"))
+        return pd.read_csv(Path("../datasets/housing/housing.csv"))
 
     def get_test_train_sets(housing):
         #################################################################################################################################
@@ -83,7 +83,7 @@ def generate_model():
     init_housing = load_housing_data()
     # 2. getting training and test sets
     strat_train_set, strat_test_set = get_test_train_sets(init_housing)
-    strat_test_set.to_csv('strat_test_set.csv', index=False)
+    strat_test_set.to_csv('../infra/bundles/strat_test_set.csv', index=False)
     # we explore only strat_train_set
     # from now our housing is a copy of strat_train_set
     housing = strat_train_set.copy()
@@ -134,27 +134,10 @@ def generate_model():
 
     # Saving model, using pickle library
     current_time_ms = int(time.time() * 1000)
-    Path("infra/bundles").mkdir(parents=True, exist_ok=True)
+    Path("../infra/bundles").mkdir(parents=True, exist_ok=True)
     model_filename = f"model_{current_time_ms}.pkl"
-    with open(f"infra/bundles/{model_filename}", "wb") as f:
+    with open(f"../infra/bundles/{model_filename}", "wb") as f:
         pickle.dump(final_model, f)
     print(f"Model saved as {model_filename}")
 
-# generate_model()
-
-def use_model():
-    with open("infra/bundles/model_1744486655460.pkl", "rb") as f:
-        model = pickle.load(f)
-    test_set = pd.read_csv("strat_test_set.csv")
-    label_median_house_value = test_set['median_house_value'].copy()
-    housing = test_set.drop("median_house_value", axis=1)
-
-    for index, row in housing.head(10).iterrows():
-        sample_house = pd.DataFrame(row.values.reshape(1, -1), columns=housing.columns.tolist())
-        predicted_price = model.predict(sample_house)
-        real_price = label_median_house_value.iloc[index]
-        print(f"Row {index}: Predicted Price = {predicted_price[0]}, Real Price = {real_price}")
-        
-use_model()
-
-    
+generate_model()

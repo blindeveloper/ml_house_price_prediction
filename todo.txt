@@ -1,0 +1,2 @@
+change python version of all services to 3.9
+it might fix np.core issue
