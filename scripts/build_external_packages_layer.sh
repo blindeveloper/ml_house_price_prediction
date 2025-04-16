@@ -7,7 +7,7 @@ current_time_ms=$(date +%s%3N)
 file_name="external_pkgs_layer_${current_time_ms}.zip"
 
 # Use a Docker container with the lambci/lambda image to install Python dependencies
-docker run --rm -v $(pwd):/foo -w /foo lambci/lambda:build-python3.8 \
+docker run --rm --platform linux/arm64 -v $(pwd):/foo -w /foo public.ecr.aws/sam/build-python3.9:latest \
     pip install -r external_pkgs_requirements.txt --no-deps --no-cache-dir -t ${PKG_DIR}
 
 # Remove unnecessary files to reduce the zip size

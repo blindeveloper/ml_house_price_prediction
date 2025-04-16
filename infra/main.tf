@@ -9,8 +9,8 @@ resource "aws_s3_bucket" "model_bucket" {
 
 resource "aws_s3_object" "model_file" {
   bucket = aws_s3_bucket.model_bucket.id
-  key    = "model_1744656136812.pkl"
-  source = "./bundles/model_1744656136812.pkl"
+  key    = "model_1744724704225.pkl"
+  source = "./bundles/model_1744724704225.pkl"
 }
 
 # IAM Role for Lambda
@@ -50,11 +50,12 @@ resource "aws_iam_role_policy_attachment" "attach_s3_policy" {
 # Lambda Function
 resource "aws_lambda_function" "house_price_prediction_lambda" {
   function_name    = "house-price-prediction"
-  runtime         = "python3.8"
-  handler         = "lambda_function.lambda_handler"
-  role            = aws_iam_role.lambda_role.arn
-  timeout         = 30
-  memory_size     = 256
+  runtime          = "python3.9"
+  handler          = "lambda_function.lambda_handler"
+  role             = aws_iam_role.lambda_role.arn
+  timeout          = 60
+  memory_size      = 512
+  architectures    = ["arm64"]  # Define the architecture (e.g., x86_64 or arm64)
 
   filename         = "./bundles/house_price_prediction_lmb_17444706363N.zip"  # Package your Lambda code into a ZIP file
   source_code_hash = filebase64sha256("./bundles/house_price_prediction_lmb_17444706363N.zip")
@@ -62,7 +63,7 @@ resource "aws_lambda_function" "house_price_prediction_lambda" {
   environment {
     variables = {
       MODEL_S3_BUCKET = aws_s3_bucket.model_bucket.id
-      MODEL_S3_KEY    = "model_1744656136812.pkl"
+      MODEL_S3_KEY    = "model_1744724704225.pkl"
     }
   }
   layers = [
@@ -110,17 +111,17 @@ output "api_gateway_url" {
 # Upload external_packages_layer to S3
 resource "aws_s3_object" "external_packages_layer" {
   bucket = aws_s3_bucket.model_bucket.id
-  key    = "external_pkgs_layer_17446516473N.zip"
-  source = "./bundles/external_pkgs_layer_17446516473N.zip" # Path to your local zip file
-  etag   = filemd5("./bundles/external_pkgs_layer_17446516473N.zip")
+  key    = "external_pkgs_layer_17448089863N.zip"
+  source = "./bundles/external_pkgs_layer_17448089863N.zip" # Path to your local zip file
+  etag   = filemd5("./bundles/external_pkgs_layer_17448089863N.zip")
 }
 
 # Upload internal_packages_layer to S3
 resource "aws_s3_object" "internal_packages_layer" {
   bucket = aws_s3_bucket.model_bucket.id
-  key    = "internal_packages_layer_17446524453N.zip"
-  source = "./bundles/internal_packages_layer_17446524453N.zip" # Path to your local zip file
-  etag   = filemd5("./bundles/internal_packages_layer_17446524453N.zip")
+  key    = "internal_packages_layer_17447254283N.zip"
+  source = "./bundles/internal_packages_layer_17447254283N.zip" # Path to your local zip file
+  etag   = filemd5("./bundles/internal_packages_layer_17447254283N.zip")
 }
 
 # =============================================Creation of Layers
@@ -128,7 +129,7 @@ resource "aws_s3_object" "internal_packages_layer" {
 resource "aws_lambda_layer_version" "external_packages_layer" {
   layer_name          = "external-packages-layer"
   description         = "Lambda with external packages"
-  compatible_runtimes = ["python3.8"] # Specify the runtimes
+  compatible_runtimes = ["python3.8","python3.9"] # Specify the runtimes
   s3_bucket           = aws_s3_bucket.model_bucket.id
   s3_key              = aws_s3_object.external_packages_layer.key
 }
@@ -137,7 +138,7 @@ resource "aws_lambda_layer_version" "external_packages_layer" {
 resource "aws_lambda_layer_version" "internal_packages_layer" {
   layer_name          = "internal-packages-layer"
   description         = "Lambda layer with internal packages codebase"
-  compatible_runtimes = ["python3.8"] # Specify the runtimes
+  compatible_runtimes = ["python3.8","python3.9"] # Specify the runtimes
   s3_bucket           = aws_s3_bucket.model_bucket.id
   s3_key              = aws_s3_object.internal_packages_layer.key
 }

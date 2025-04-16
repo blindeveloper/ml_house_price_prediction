@@ -2,6 +2,10 @@ import pickle
 import boto3
 import os
 import json
+import numpy as np
+import sklearn
+import pandas as pd
+from build_model.preprocessing_pipeline import PreprocessingPipeline
 
 s3 = boto3.client("s3")
 
@@ -20,9 +24,8 @@ def load_model():
     # Load the model from the local file
     with open(local_path, "rb") as f:
         model = pickle.load(f)
-    
-    # print("model: ", model)
-    # return model
+
+    return model
 
 model = load_model()
 
@@ -32,6 +35,24 @@ def lambda_handler(event, context):
         # features = body["features"]  # Expecting JSON: {"features": [values]}
 
         # prediction = model.predict([features]).tolist()
+
+        data = {
+            "longitude": [-121.95],
+            "latitude": [37.11],
+            "housing_median_age": [21.0],
+            "total_rooms": [2387.0],
+            "total_bedrooms": [357.0],
+            "population": [913.0],
+            "households": [341.0],
+            "median_income": [7.736],
+            "ocean_proximity": ["<1H OCEAN"]
+        }
+        h_columnns = ['longitude', 'latitude', 'housing_median_age', 'total_rooms', 'total_bedrooms', 'population', 'households', 'median_income', 'ocean_proximity']
+        df = pd.DataFrame(data)
+        for index, row in df.iterrows():
+            sample_house = pd.DataFrame(row.values.reshape(1, -1), columns=h_columnns)
+            predicted_price = model.predict(sample_house)
+            print(f"Row {index}: Predicted Price = {predicted_price[0]}, Real Price = 397700.0")
 
         return {
             "statusCode": 200,

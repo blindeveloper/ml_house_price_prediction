@@ -13,3 +13,5 @@ mv ${file_name} ../../infra/bundles/
 
 cd ..
 rm -rf layer
+
+echo "${file_name} generated"
