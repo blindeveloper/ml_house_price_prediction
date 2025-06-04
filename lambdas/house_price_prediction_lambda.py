@@ -31,32 +31,28 @@ model = load_model()
 
 def lambda_handler(event, context):
     try:
-        # body = json.loads(event["body"])
-        # features = body["features"]  # Expecting JSON: {"features": [values]}
-
-        # prediction = model.predict([features]).tolist()
+        body = json.loads(event["body"])
 
         data = {
-            "longitude": [-121.95],
-            "latitude": [37.11],
-            "housing_median_age": [21.0],
-            "total_rooms": [2387.0],
-            "total_bedrooms": [357.0],
-            "population": [913.0],
-            "households": [341.0],
-            "median_income": [7.736],
-            "ocean_proximity": ["<1H OCEAN"]
+            "longitude": body["longitude"],
+            "latitude": body["latitude"],
+            "housing_median_age": body["housing_median_age"],
+            "total_rooms": body["total_rooms"],
+            "total_bedrooms": body["total_bedrooms"],
+            "population": body["population"],
+            "households": body["households"],
+            "median_income": body["median_income"],
+            "ocean_proximity": body["ocean_proximity"]
         }
         h_columnns = ['longitude', 'latitude', 'housing_median_age', 'total_rooms', 'total_bedrooms', 'population', 'households', 'median_income', 'ocean_proximity']
         df = pd.DataFrame(data)
         for index, row in df.iterrows():
             sample_house = pd.DataFrame(row.values.reshape(1, -1), columns=h_columnns)
-            predicted_price = model.predict(sample_house)
-            print(f"Row {index}: Predicted Price = {predicted_price[0]}, Real Price = 397700.0")
-
+            predicted_price = model.predict(sample_house)[0]
+            # real_price = 397700.0
         return {
             "statusCode": 200,
-            "body": json.dumps({"prediction": "test 2"})
+            "body": json.dumps({"predicted_price": predicted_price })
         }
 
     except Exception as e:

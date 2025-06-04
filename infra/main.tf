@@ -57,8 +57,8 @@ resource "aws_lambda_function" "house_price_prediction_lambda" {
   memory_size      = 512
   architectures    = ["arm64"]  # Define the architecture (e.g., x86_64 or arm64)
 
-  filename         = "./bundles/house_price_prediction_lmb_17444706363N.zip"  # Package your Lambda code into a ZIP file
-  source_code_hash = filebase64sha256("./bundles/house_price_prediction_lmb_17444706363N.zip")
+  filename         = "./bundles/house_price_prediction_lmb_17490449163N.zip"  # Package your Lambda code into a ZIP file
+  source_code_hash = filebase64sha256("./bundles/house_price_prediction_lmb_17490449163N.zip")
 
   environment {
     variables = {
