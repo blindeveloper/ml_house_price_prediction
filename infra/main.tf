@@ -51,7 +51,7 @@ resource "aws_iam_role_policy_attachment" "attach_s3_policy" {
 resource "aws_lambda_function" "house_price_prediction_lambda" {
   function_name    = "house-price-prediction"
   runtime          = "python3.9"
-  handler          = "lambda_function.lambda_handler"
+  handler          = "house_price_prediction_lambda.lambda_handler"
   role             = aws_iam_role.lambda_role.arn
   timeout          = 60
   memory_size      = 512
