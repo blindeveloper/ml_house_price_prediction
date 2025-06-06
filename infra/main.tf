@@ -76,6 +76,12 @@ resource "aws_lambda_function" "house_price_prediction_lambda" {
 resource "aws_apigatewayv2_api" "http_api" {
   name          = "ml-api"
   protocol_type = "HTTP"
+  cors_configuration {
+    allow_origins = ["https://machinetalking.com"]
+    allow_headers = ["Content-Type", "Authorization"]
+    allow_methods = ["POST", "OPTIONS"]
+    max_age       = 3600
+  }
 }
 
 resource "aws_apigatewayv2_stage" "default" {
